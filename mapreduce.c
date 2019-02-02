@@ -81,6 +81,7 @@ char *GetNext(char *key, int pNum) {
 
 	/********* CORRECT BELOW CODE **************/	
 	Key_valList *curr_pData = &curr_partn_data[pNum];
+	//printf("curr_pData %s\n",curr_pData->key);
 	if(curr_pData->key==NULL || strcmp(curr_pData->key,key)!=0){
 		int key_found = 0;
 		Key_valList *temp = &data[pNum];		
@@ -129,8 +130,10 @@ void *partitionAndMap(void* arg) {
 void *partitionAndReduce(void* arg) {
 	Reducer_Partition *w = (Reducer_Partition *) arg;
 	int pNum;
+	//printf("In reducer--> w->startIdx: %d   w->endIdx: %d\n",w->startIdx,w->endIdx);
 	for (pNum = w->startIdx; pNum < w->endIdx; pNum++) {
 		Key_valList *temp = &data[pNum];
+		//printf("Going for pNum %d with starting key %s\n",pNum,temp->key);
 		while(temp->next!=NULL){
 			w->reduce(temp->key, GetNext, pNum);
 			temp = temp->next;
@@ -152,10 +155,10 @@ void MR_Emit(char *key, char *value) {
 	*/
 	Key_valList *temp = &data[pNum];
 	//printf("PNum: %lu , Key: %s , Address: %p\n",pNum,temp->key,(void*)temp);
-	printf("Pointing at %lu  Incoming Key: %s  ",pNum,key);
+	//printf("Pointing at %lu  Incoming Key: %s  ",pNum,key);
 	while(temp->next!=NULL){
 		if(strcmp(temp->key,key)==0){
-			printf("Found: %s in pNum: %lu\n",temp->key, pNum);
+			//printf("Found: %s in pNum: %lu\n",temp->key, pNum);
 			key_found = 1;
 			break;
 		}else{
@@ -164,7 +167,7 @@ void MR_Emit(char *key, char *value) {
 	}
 	if(!key_found && temp->key!=NULL && strcmp(temp->key,key)==0){
 		key_found = 1;
-		printf("Found: %s in pNum: %lu\n",temp->key, pNum);
+		//printf("Found: %s in pNum: %lu\n",temp->key, pNum);
 	}
 	if(!key_found){
 		Key_valList *new_data = (Key_valList *) malloc(sizeof(Key_valList));
@@ -177,7 +180,7 @@ void MR_Emit(char *key, char *value) {
 			temp->key = new_data->key;
 			temp->next = new_data->next;
 		}
-		printf("Added: %s in pNum: %lu\n",temp->key,pNum);
+		//printf("Added: %s in pNum: %lu\n",temp->key,pNum);
 	}
 
 	/*List *new_node = (List *) malloc(sizeof(List));
@@ -204,6 +207,7 @@ void MR_Emit(char *key, char *value) {
 		temp->valList_curr_mHead->next = new_node;
 		temp->valList_curr_mHead = new_node;
 	}
+	//printf("key: %s  List_head: %p  List_curr_mHead: %p\n",key,(void*)temp->valList_head,(void*)temp->valList_curr_mHead);
 	pthread_mutex_unlock(&data_mutex);
 }
 
@@ -222,6 +226,7 @@ void MR_Run(int argc, char *argv[], Mapper map, int num_mappers, Reducer reduce,
 	pthread_mutex_init(&data_mutex, NULL);
 	pthread_attr_init(&attr);
 	num_mappers = num_files > num_mappers ? num_mappers : num_files;
+	num_reducers = NUM_PARTITIONS < num_reducers ? NUM_PARTITIONS : num_reducers;
 	pthread_t mapThreads[num_mappers];
 	pthread_t reduceThreads[num_reducers];
 
